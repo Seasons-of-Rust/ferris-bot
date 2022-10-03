@@ -7,7 +7,7 @@
 # RUN cargo build --release
 
 # For the bot executor
-FROM centos:stream9
+FROM quay.io/centos/centos:stream9
 
 # We are doing podman-alongside-podman with podman remote
 # Just use podman remote instead of trying to nest containers
