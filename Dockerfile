@@ -1,10 +1,10 @@
-# FROM rust:1 as builder
-# 
-# WORKDIR /app
-# 
-# COPY . /app
-# 
-# RUN cargo build --release
+FROM rust:1 as builder
+
+WORKDIR /app
+
+COPY . /app
+
+RUN cargo build --release
 
 # For the bot executor
 FROM quay.io/centos/centos:stream9
@@ -27,9 +27,9 @@ ENV IS_RUNNING_IN_CONTAINER="true"
 ENV CONTAINER_HOST="unix:/run/podman/podman.sock"
 
 # For local development
-COPY ./target/release/ferris-bot /app/ferris-bot
+# COPY ./target/release/ferris-bot /app/ferris-bot
 # For using the builder image
-# COPY --from=builder /app/target/release/ferris-bot /app/ferris-bot
+COPY --from=builder /app/target/release/ferris-bot /app/ferris-bot
 
 USER ferris;
 
