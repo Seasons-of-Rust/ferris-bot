@@ -24,19 +24,22 @@ job "ferris-bot" {
 
   group "ferris-bot-orchestrator" {
     task "ferris-bot" {
-      driver = "podman"
+      driver = "docker"
+
       config {
-        image = "ghcr.io/summer-of-rust/ferris-bot/ferris-bot-rust:latest "
-        # This should be updated depending on nomad deployment
-        volumes = [
-          "run/user/1000/podman/podman.sock:/run/podman/podman.sock"
-        ]
-        user = "ferris"
+        #image = "ghcr.io/seasons-of-rust/ferris-bot/ferris-bot-rust:latest"
+        image = "localhost/ferris-bot:latest"
+        privileged = true
+      }
+
+      resources {
+        cpu    = 64
+        memory = 64
       }
       
       template {
         data = <<EOH
-DISCORD_TOKEN="pull_from_key_service_or_something_idk"
+DISCORD_TOKEN="todo_put_secret_here_or_something"
 EOH
         destination = "secrets/file.env"
         env         = true
