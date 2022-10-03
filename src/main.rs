@@ -4,6 +4,7 @@ use poise::serenity_prelude as serenity;
 mod commands;
 mod configuration;
 mod model;
+pub mod playground;
 use crate::commands::{quiz, run};
 use crate::model::container::{get_container_settings, ContainerActions};
 use std::process::exit;
@@ -25,15 +26,17 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
 async fn main() {
     dotenv().ok();
 
-    // Before anything, pull the latest container image for running rust code
-    // We will use RustBot's runner image for this
-    // https://github.com/TheConner/RustBot/pkgs/container/rustbot-runner
-    if let Err(e) = get_container_settings().pull_image() {
-        println!("Error pulling image: {:?}", e);
-
-        // Fail & bail
-        exit(-1);
-    };
+    if cfg!(feature = "podman") {
+        // Before anything, pull the latest container image for running rust code
+        // We will use RustBot's runner image for this
+        // https://github.com/TheConner/RustBot/pkgs/container/rustbot-runner
+        if let Err(e) = get_container_settings().pull_image() {
+            println!("Error pulling image: {:?}", e);
+    
+            // Fail & bail
+            exit(-1);
+        };
+    }
 
     println!("Starting up...");
     let framework = poise::Framework::build()

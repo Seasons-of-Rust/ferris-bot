@@ -1,8 +1,22 @@
+[workspace]
+members = [
+    ".",
+    "serenity-layer",
+]
+
 [package]
 name = "ferris-bot"
 version = "0.1.0"
 authors = ["Forest Anderson <forestkzanderson@gmail.com>"]
 edition = "2021"
+
+# [[bin]]
+# name = "ferris-bot"
+# path = "src/main.rs"
+
+[features]
+default = []
+podman = []
 
 [dependencies]
 serenity = { version="0.11.2", default-features = false, features = ["client", "gateway", "rustls_backend", "model", "collector"] }
@@ -12,3 +26,7 @@ poise = "0.2.1"
 process_control = "3.4"
 base64 = "0.13.0"
 async-trait = "0.1.56"
+reqwest = { version = "0.11.12", features = ["json"] }
+serde = { version = "1.0.145", features = ["derive"] }
+tracing = "0.1.36"
+serenity-layer = { path = "serenity-layer" }

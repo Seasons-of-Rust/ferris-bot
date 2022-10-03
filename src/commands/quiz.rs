@@ -9,9 +9,11 @@ use serenity::model::interactions::InteractionResponseType;
 
 use serenity::prelude::Mentionable;
 use serenity::utils::MessageBuilder;
+use serenity_layer::prelude::Params;
 
 use crate::model::question::QuestionTF;
 use crate::Error;
+use crate::playground::{get_playground_link, run_code};
 
 const QUESTION_TIME: u64 = 30;
 
@@ -48,12 +50,6 @@ pub async fn quiz(
         return Ok(());
     }
 
-    // Get the current number of seconds since the epoch
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-
     // Load text from file question/q1.rs
     let mut file = File::open(format!("questions/q{}.rs", question_number))?;
     let mut contents = String::new();
@@ -71,6 +67,12 @@ pub async fn quiz(
         })
         .await?;
 
+    // Get the current number of seconds since the epoch
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
     let m = channel
         .id()
         .send_message(&ctx.discord.http, |m| {
@@ -87,6 +89,10 @@ pub async fn quiz(
         })
         .await
         .unwrap();
+
+    let code_result = run_code(Params::default(), contents.clone()).await?;
+
+    // Send the code to the playground to test
 
     // Wait for a responses within a certain amount of time
     let mut cib = m
