@@ -15,8 +15,8 @@ FROM quay.io/podman/stable:latest
 #ENV CONTAINER_HOST="unix:/run/podman/podman.sock"
 
 # For local development
-COPY ./target/release/ferris-bot /app/ferris-bot
+#COPY ./target/release/ferris-bot /app/ferris-bot
 # For using the builder image
-#COPY --from=builder /app/target/release/ferris-bot /app/ferris-bot
+COPY --from=builder /app/target/release/ferris-bot /app/ferris-bot
 
 ENTRYPOINT ["/app/ferris-bot"]
