@@ -15,7 +15,7 @@ use crate::model::question::QuestionTF;
 use crate::Error;
 use crate::playground::{get_playground_link, run_code};
 
-const QUESTION_TIME: u64 = 30;
+const QUESTION_TIME: u64 = 2;
 
 /// Starts a quiz
 #[poise::command(slash_command)]
@@ -92,6 +92,8 @@ pub async fn quiz(
 
     let code_result = run_code(Params::default(), contents.clone()).await?;
 
+    println!("Code result: {:?}", code_result);
+
     // Send the code to the playground to test
 
     // Wait for a responses within a certain amount of time
@@ -147,6 +149,7 @@ pub async fn quiz(
                     .push("```rust\n")
                     .push(&contents)
                     .push("```")
+                    .push(code_result)
                     .build(),
             )
         })
