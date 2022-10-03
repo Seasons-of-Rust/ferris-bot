@@ -8,15 +8,15 @@ use std::io::ErrorKind;
 fn format_output(response: String, syntax_highlight: Option<&str>) -> String {
     if response.len() < 1000 {
         // Response falls within size constraints
-        return format!("```{}\n{}\n```", syntax_highlight.unwrap_or(""), response);
+        format!("```{}\n{}\n```", syntax_highlight.unwrap_or(""), response)
     } else {
         // For UX, truncate components to 1000 chars... should be long enough
         let short_repsonse = &response[0..1000];
-        return format!(
+        format!(
             "```{}\n{}[TRUNCATED]```",
             syntax_highlight.unwrap_or(""),
             short_repsonse
-        );
+        )
     }
 }
 

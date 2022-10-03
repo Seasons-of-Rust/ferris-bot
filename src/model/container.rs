@@ -13,35 +13,41 @@ pub struct ContainerSettings {
     pub image: String,
     pub max_runtime: u64,
     pub network: String,
+    pub pid_limit: u64,
 }
 
 pub trait ContainerActions {
-    fn generate_runtime_flags(&self, is_container: bool) -> String;
+    fn container_command(&self) -> String;
+    fn generate_runtime_flags(&self) -> String;
     fn pull_image(&self) -> Result<(), Error>;
     fn invoke_command(&self, command: String) -> io::Result<std::process::Child>;
 }
 
 impl ContainerActions for ContainerSettings {
-    /// Turns a ContainerSettings instance into a string of CLI args for Podman or Docker
-    /// is_container: describes if we are running rustbot in a container
-    fn generate_runtime_flags(&self, is_container: bool) -> String {
-        // BUG: when swap is included, we get a OCI runtime error as memory+swap is greater than configured memory
-        // fix and re-add swap constraint
-        // NOTE: podman-in-podman requires cgroups to set resources, which isn't available within nested containers
-        // so, admins will have to limit the resources on the outer container themselves
-        if is_container {
-            String::from("")
+    /// Gets the container command to use
+    /// Either podman-remote or podman
+    fn container_command(&self) -> String {
+        // Are we running this in a container?
+        if configuration::IS_RUNNING_IN_CONTAINER.value() {
+            // Invoke podman with remote socket that should be passed to the container
+            String::from("podman-remote")
         } else {
-            format!(
-                "--cpus={} --memory={} --network={}",
-                self.cpu, self.memory, self.network
-            )
+            // Invoke podman the default way
+            String::from("podman")
         }
+    }
+
+    /// Turns a ContainerSettings instance into a string of CLI args for Podman or Docker
+    fn generate_runtime_flags(&self) -> String {
+        format!(
+            "--cap-drop=ALL --security-opt=no-new-privileges --cpus={} --memory={} --network={} --pids-limit={}",
+            self.cpu, self.memory, self.network, self.pid_limit
+        )
     }
 
     /// Pulls a container image from a registry
     fn pull_image(&self) -> Result<(), Error> {
-        let output = Command::new("podman")
+        let output = Command::new(self.container_command())
             .arg("pull")
             .arg(&self.image)
             .status()
@@ -61,13 +67,14 @@ impl ContainerActions for ContainerSettings {
 
     fn invoke_command(&self, command: String) -> io::Result<std::process::Child> {
         let container_command = format!(
-            "podman run --rm {} {} {}",
-            self.generate_runtime_flags(configuration::IS_RUNNING_IN_CONTAINER.value()),
+            "{} run --rm {} {} {}",
+            self.container_command(),
+            self.generate_runtime_flags(),
             self.image,
             command
         );
 
-        //println!("{}", container_command);
+        println!("{}", container_command);
 
         // Because std::command does not give me the ability to override / modify
         // how arguments are escaped I have to do some stupid hack to make this
@@ -103,5 +110,6 @@ pub fn get_container_settings() -> ContainerSettings {
         swap: (*configuration::CONTAINER_SWAP).value(),
         max_runtime: (*configuration::CONTAINER_MAX_RUNTIME).value(),
         network: (*configuration::CONTAINER_NETWORK).value(),
+        pid_limit: (*configuration::CONTAINER_PIDS).value(),
     }
 }

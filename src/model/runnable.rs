@@ -57,13 +57,11 @@ impl Runnable for String {
         // a shell with a payload I deem as safe
         let process = container_settings.invoke_command(container_command);
 
-        let output = process?
+        process?
             .controlled_with_output()
             .time_limit(Duration::from_millis(container_settings.max_runtime))
             .terminate_for_timeout()
             .wait()?
-            .ok_or_else(|| Error::new(io::ErrorKind::TimedOut, "Process timed out"));
-
-        output
+            .ok_or_else(|| Error::new(io::ErrorKind::TimedOut, "Process timed out"))
     }
 }

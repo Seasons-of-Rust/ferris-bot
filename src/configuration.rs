@@ -45,3 +45,9 @@ pub const CONTAINER_NETWORK: &ConfigurableItem<&str> = &ConfigurableItem {
     environment_variable: "CONTAINER_NETWORK",
     default_value: "none",
 };
+
+// Maximum amount of PIDs available to a container
+pub const CONTAINER_PIDS: &ConfigurableItem<u64> = &ConfigurableItem {
+    environment_variable: "MAX_PIDS",
+    default_value: 64,
+};

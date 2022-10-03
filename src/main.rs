@@ -6,6 +6,7 @@ mod configuration;
 mod model;
 use crate::commands::{quiz, run};
 use crate::model::container::{get_container_settings, ContainerActions};
+use std::process::exit;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -29,6 +30,9 @@ async fn main() {
     // https://github.com/TheConner/RustBot/pkgs/container/rustbot-runner
     if let Err(e) = get_container_settings().pull_image() {
         println!("Error pulling image: {:?}", e);
+
+        // Fail & bail
+        exit(-1);
     };
 
     println!("Starting up...");
