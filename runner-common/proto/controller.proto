@@ -1,0 +1,15 @@
+syntax = "proto3";
+package controller;
+
+service Controller {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+}
+
+message RegisterRequest {
+  string host = 1;
+  string port = 2;
+}
+
+message RegisterResponse {
+  int32 nodeid = 1;
+}

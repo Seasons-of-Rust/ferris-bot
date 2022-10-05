@@ -1,0 +1,58 @@
+syntax = "proto3";
+package runner;
+
+service Runner {
+  // Runs a piece of code, returns the response
+  rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+
+  // Describes the node
+  rpc Describe(Empty) returns (DescribeResponse);
+
+  // Heartbeat
+  rpc Heartbeat(Empty) returns (Empty);
+}
+
+// In the future, we may decide to support more languages!
+enum Language {
+  // Rust language (default)
+  LANG_RUST = 0;
+}
+
+enum ExecuteStatus {
+  // Everything peachy
+  OK = 0;
+  // Took to long to run
+  ERR_TIMEOUT = 1;
+  // Podman blew up
+  ERR_SYS = 2;
+  // Something else?
+  ERR = 4;
+}
+
+message ExecuteRequest {
+  // Program to be ran
+  string program    = 1;
+  // (optional) args to pass to the program
+  string args       = 2;
+  // Language to use, defaults to 0th entry in Language
+  Language language = 3;
+}
+
+message ExecuteResponse {
+  // Return code from the program
+  int32 retcode = 1;
+  // Standard output
+  string stdout = 2;
+  // Standard error
+  string stderr = 3;
+  
+  // Did everything work OK?
+  ExecuteStatus status = 4;
+  // How long did this take? (more for debugging)
+  uint64 duration = 5;
+}
+
+message Empty {}
+
+// TODO: include more metadata here
+message DescribeResponse { string host = 1; }

@@ -4,7 +4,7 @@ use std::io;
 use std::io::Error;
 use std::time::Duration;
 
-use crate::model::container::{get_container_settings, ContainerActions, ContainerSettings};
+use crate::runner::container::{get_container_settings, ContainerActions, ContainerSettings};
 
 #[async_trait]
 pub trait Runnable {

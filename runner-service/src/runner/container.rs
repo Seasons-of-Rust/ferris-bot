@@ -1,5 +1,5 @@
 use crate::configuration;
-use crate::model::configurable::ConfigurableValue;
+use crate::runner::configurable::ConfigurableValue;
 use std::io;
 use std::io::Error;
 use std::process::{Command, Stdio};

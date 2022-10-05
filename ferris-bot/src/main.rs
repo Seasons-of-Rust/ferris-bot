@@ -1,17 +1,19 @@
 use dotenv::dotenv;
-use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::{self as serenity};
+use runner_common::runner::{runner_client::RunnerClient, SharedRunnerClient};
 
 mod commands;
-mod configuration;
+
 mod model;
 use crate::commands::{quiz, run};
-use crate::model::container::{get_container_settings, ContainerActions};
-use std::process::exit;
+use std::{process::exit, sync::Arc};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 // User data, which is stored and accessible in all command invocations
-pub struct Data {}
+pub struct Data {
+    shared_client: SharedRunnerClient
+}
 
 /// Registers or unregisters application commands in this guild or globally
 #[poise::command(prefix_command, hide_in_help)]
@@ -25,15 +27,7 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
 async fn main() {
     dotenv().ok();
 
-    // Before anything, pull the latest container image for running rust code
-    // We will use RustBot's runner image for this
-    // https://github.com/TheConner/RustBot/pkgs/container/rustbot-runner
-    if let Err(e) = get_container_settings().pull_image() {
-        println!("Error pulling image: {:?}", e);
-
-        // Fail & bail
-        exit(-1);
-    };
+    let client = 
 
     println!("Starting up...");
     let framework = poise::Framework::build()
@@ -49,7 +43,9 @@ async fn main() {
         .intents(
             serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
         )
-        .user_data_setup(move |_ctx, _ready, _framework| Box::pin(async move { Ok(Data {}) }));
+        .user_data_setup(move |_ctx, _ready, _framework| Box::pin(async move { Ok(Data {
+            shared_client: SharedRunnerClient::new().await
+        })}));
 
     framework.run().await.unwrap();
 }

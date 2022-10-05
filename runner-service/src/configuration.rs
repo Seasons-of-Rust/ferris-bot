@@ -1,4 +1,4 @@
-use crate::model::configurable::*;
+use crate::runner::configurable::*;
 
 /// Sets the container image to pull
 pub const CONTAINER_IMAGE: &ConfigurableItem<&str> = &ConfigurableItem {

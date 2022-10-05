@@ -1,8 +1,8 @@
-use crate::model::runnable::*;
 use crate::Error;
+use runner_common::runner::{ExecuteRequest, Language};
 use serenity::prelude::Mentionable;
 
-use std::io::ErrorKind;
+use std::{io::ErrorKind, sync::Arc};
 
 /// Given some stdout or stderr data, format it so that it can be rendered by discord
 fn format_output(response: String, syntax_highlight: Option<&str>) -> String {
@@ -101,34 +101,25 @@ pub async fn run(
     let modal_data = RunModal::execute(ctx).await?;
     let raw_code = modal_data.code_to_run;
 
+    // Grab the Client service from ctx and clone it 
+    // Cloning the tonic client / channel is low cost, see
+    // https://docs.rs/tonic/latest/tonic/transport/struct.Channel.html#multiplexing-requests
+    let mut run_client = ctx.data.shared_client.get();
+
+    let run_request = runner_common::tonic::Request::new(ExecuteRequest {
+        language: Language::LangRust.into(),
+        program: raw_code.clone(),
+        args: "".into() // future feature ;)
+    });
+
     // This leverages the runnable trait we created for executing arbitrary strings of code
-    let run_result = raw_code.run().await;
+    let run_result = run_client.execute(run_request).await;
 
     match run_result {
         Ok(output) => {
-            let mut stdout = String::new();
-            let mut stderr = String::new();
-
-            if !output.stdout.is_empty() {
-                stdout = match String::from_utf8(output.stdout) {
-                    Ok(v) => v,
-                    Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
-                };
-
-                println!("Got stdout\n\"{}\"", stdout);
-            } else {
-                println!("No stdout");
-            }
-
-            if !output.stderr.is_empty() {
-                stderr = match String::from_utf8(output.stderr) {
-                    Ok(v) => v,
-                    Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
-                };
-                println!("Got stderr \"{}\"", stderr);
-            } else {
-                println!("No stderr");
-            }
+            let output = output.into_inner();
+            let stdout = output.stdout;
+            let stderr = output.stderr;
 
             // TODO: better response classification
             // in the original rustbot we used reactions to indicate successful or failed compilation
@@ -140,19 +131,20 @@ pub async fn run(
         Err(error) => {
             // TODO: find out ways this can blow up
             //println!("TIMEOUT on {}'s code", interaction.);
-            match error.kind() {
-                ErrorKind::TimedOut => {
-                    // Took too long to run, complain to user
-                    //msg.react(&ctx, CROSS_MARK_EMOJI).await?;
-                    //msg.react(&ctx, CLOCK_EMOJI).await?;
-                    reply(
-                        ctx,
-                        raw_code,
-                        None,
-                        Some("Your program took too long to run.".to_owned()),
-                    )
-                    .await?;
-                }
+            match error {
+                // error handling is a later problem...
+                // ErrorKind::TimedOut => {
+                //     // Took too long to run, complain to user
+                //     //msg.react(&ctx, CROSS_MARK_EMOJI).await?;
+                //     //msg.react(&ctx, CLOCK_EMOJI).await?;
+                //     reply(
+                //         ctx,
+                //         raw_code,
+                //         None,
+                //         Some("Your program took too long to run.".to_owned()),
+                //     )
+                //     .await?;
+                // }
                 _ => {
                     println!("Error: {:?}", error);
                 }

@@ -8,7 +8,7 @@ COPY . /app
 RUN cargo build --release
 
 # --- Executor ---
-FROM quay.io/podman/stable:latest
+FROM rust:1-slim-buster
 
 # Commenting this out as the current podman design does not face any additional
 # restrictrions when running in a container
