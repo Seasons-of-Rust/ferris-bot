@@ -21,7 +21,8 @@ const QUESTION_TIME: u64 = 2;
 #[poise::command(slash_command)]
 pub async fn quiz(
     ctx: poise::ApplicationContext<'_, crate::Data, crate::Error>,
-    #[description = "The choice you want to choose"] question_number: i64,
+    #[description = "The choice you want to choose"] question_number: Option<i64>,
+    #[description = "The Rust Playground Share link"] playground: Option<String>,
 ) -> Result<(), Error> {
     // Get the serenity interaction for the slash command
     // TODO: error handling...
