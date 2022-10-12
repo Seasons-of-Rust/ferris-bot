@@ -1,28 +1,25 @@
+use crate::model::question::QuestionTF;
+use crate::playground::{get_playground_link, run_code};
+use crate::Error;
+use poise::serenity_prelude::interaction::InteractionResponseType;
+use serenity::futures::StreamExt;
+use serenity::prelude::Mentionable;
+use serenity::utils::MessageBuilder;
+use serenity_layer::prelude::Params;
 use std::fs::File;
 use std::io::Read;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
-use serenity::futures::StreamExt;
-
-use serenity::model::interactions::InteractionResponseType;
-
-use serenity::prelude::Mentionable;
-use serenity::utils::MessageBuilder;
-use serenity_layer::prelude::Params;
-
-use crate::model::question::QuestionTF;
-use crate::Error;
-use crate::playground::{get_playground_link, run_code};
+use url::{ParseError, Url};
 
 const QUESTION_TIME: u64 = 2;
 
 /// Starts a quiz
-#[poise::command(slash_command)]
+#[poise::command(slash_command, guild_only)]
 pub async fn quiz(
     ctx: poise::ApplicationContext<'_, crate::Data, crate::Error>,
-    #[description = "The choice you want to choose"] question_number: Option<i64>,
     #[description = "The Rust Playground Share link"] playground: Option<String>,
+    #[description = "The choice you want to choose"] question_number: Option<i64>,
 ) -> Result<(), Error> {
     // Get the serenity interaction for the slash command
     // TODO: error handling...
@@ -46,15 +43,54 @@ pub async fn quiz(
         QuestionTF::False,
     ];
 
-    if question_number > answers.len() as i64 {
-        println!("Question number out of bounds");
-        return Ok(());
-    }
-
-    // Load text from file question/q1.rs
-    let mut file = File::open(format!("questions/q{}.rs", question_number))?;
     let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
+
+    match (question_number, playground) {
+        (Some(question_number), None) => {
+            if question_number > answers.len() as i64 {
+                println!("Question number out of bounds");
+                return Ok(());
+            }
+
+            // Load text from file question/q1.rs
+            let mut file = File::open(format!("questions/q{}.rs", question_number))?;
+            file.read_to_string(&mut contents)?;
+        }
+        (None, Some(playground)) => {
+            // Download the code from the playground
+            // https://gist.github.com/f3a3aef951b6734cbf9eadbfd6f4c2ef
+            // https://gist.githubusercontent.com/rust-play/f3a3aef951b6734cbf9eadbfd6f4c2ef/raw/4c8b98a7ddbe9c8ba06fa1323113b8c268c45457/playground.rs
+            // https://gist.githubusercontent.com/rust-play/f3a3aef951b6734cbf9eadbfd6f4c2ef/raw/playground.rs
+
+            let parse = Url::parse(&playground).unwrap();
+
+            // Make sure the link comes in the form
+            // https://gist.github.com/f3a3aef951b6734cbf9eadbfd6f4c2ef
+            if parse.domain() != Some("gist.github.com") {
+                println!("Invalid domain");
+                return Ok(());
+            }
+
+            // Get the domain path
+            let gist_id = parse.path_segments().unwrap().last().unwrap();
+
+            // Build the link
+            let gist_raw_link = format!(
+                "https://gist.githubusercontent.com/rust-play/{}/raw/playground.rs",
+                gist_id
+            );
+
+            // Download the code
+            let mut response = reqwest::get(&gist_raw_link).await?;
+
+            // Read the response
+            contents = response.text().await?;
+        }
+        _ => {
+            // Reply with an error
+            return Ok(());
+        }
+    }
 
     // Ask the question
     ctx.interaction
@@ -111,9 +147,9 @@ pub async fn quiz(
 
         let member = mci.member.clone().unwrap();
 
-        if question_choice == answers[(question_number - 1) as usize] {
-            correct_answers.push(member);
-        }
+        // if question_choice == answers[(question_number - 1) as usize] {
+        correct_answers.push(member);
+        // }
 
         // Acknowledge the interaction and send a reply
         mci.create_interaction_response(&ctx.discord, |r| {
@@ -146,7 +182,7 @@ pub async fn quiz(
             m.content(
                 builder
                     .push("\n\nThe correct answer was: ")
-                    .push(answers[(question_number - 1) as usize].to_string())
+                    // .push(answers[(question_number - 1) as usize].to_string())
                     .push("```rust\n")
                     .push(&contents)
                     .push("```")
