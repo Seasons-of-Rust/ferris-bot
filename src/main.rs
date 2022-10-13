@@ -26,6 +26,8 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
 async fn main() {
     dotenv().ok();
 
+    env_logger::init();
+
     if cfg!(feature = "podman") {
         // Before anything, pull the latest container image for running rust code
         // We will use RustBot's runner image for this
@@ -39,7 +41,7 @@ async fn main() {
     }
 
     println!("Starting up...");
-    let framework = poise::Framework::build()
+    let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![register(), quiz::quiz(), run::run()],
             prefix_options: poise::PrefixFrameworkOptions {

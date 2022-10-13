@@ -12,14 +12,14 @@ use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use url::{ParseError, Url};
 
-const QUESTION_TIME: u64 = 2;
+const QUESTION_TIME: u64 = 30;
 
 /// Starts a quiz
-#[poise::command(slash_command, guild_only)]
+#[poise::command(slash_command)]
 pub async fn quiz(
     ctx: poise::ApplicationContext<'_, crate::Data, crate::Error>,
-    #[description = "The Rust Playground Share link"] playground: Option<String>,
     #[description = "The choice you want to choose"] question_number: Option<i64>,
+    #[description = "The Rust Playground Share link"] playground: Option<String>,
 ) -> Result<(), Error> {
     // Get the serenity interaction for the slash command
     // TODO: error handling...
@@ -42,6 +42,8 @@ pub async fn quiz(
         QuestionTF::True,
         QuestionTF::False,
     ];
+
+    let question_number: Option<i64> = None;
 
     let mut contents = String::new();
 
@@ -127,11 +129,15 @@ pub async fn quiz(
         .await
         .unwrap();
 
+    // Send the code to the playground to test
     let code_result = run_code(Params::default(), contents.clone()).await?;
 
-    println!("Code result: {:?}", code_result);
-
-    // Send the code to the playground to test
+    // The code compiled if the second last line doesn't start with "error:"
+    let compiled = !code_result
+        .lines()
+        .nth_back(1)
+        .unwrap()
+        .starts_with("error:");
 
     // Wait for a responses within a certain amount of time
     let mut cib = m
@@ -147,9 +153,9 @@ pub async fn quiz(
 
         let member = mci.member.clone().unwrap();
 
-        // if question_choice == answers[(question_number - 1) as usize] {
-        correct_answers.push(member);
-        // }
+        if compiled == (&mci.data.custom_id == "true") {
+            correct_answers.push(member);
+        }
 
         // Acknowledge the interaction and send a reply
         mci.create_interaction_response(&ctx.discord, |r| {
@@ -182,7 +188,7 @@ pub async fn quiz(
             m.content(
                 builder
                     .push("\n\nThe correct answer was: ")
-                    // .push(answers[(question_number - 1) as usize].to_string())
+                    .push(compiled)
                     .push("```rust\n")
                     .push(&contents)
                     .push("```")
