@@ -1,3 +1,5 @@
+use base64::Config;
+
 use crate::runner::configurable::*;
 
 /// Sets the container image to pull
@@ -50,4 +52,10 @@ pub const CONTAINER_NETWORK: &ConfigurableItem<&str> = &ConfigurableItem {
 pub const CONTAINER_PIDS: &ConfigurableItem<u64> = &ConfigurableItem {
     environment_variable: "MAX_PIDS",
     default_value: 64,
+};
+
+// Hostname of the controller to connect to
+pub const CONTROLLER_HOST: &ConfigurableItem<&str> = &ConfigurableItem {
+    environment_variable: "CONTROLLER_HOST",
+    default_value: "localhost"
 };

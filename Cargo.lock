@@ -326,6 +326,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "dotenv",
+ "futures",
  "poise",
  "runner-common",
  "serenity",
@@ -1155,10 +1156,8 @@ dependencies = [
  "dotenv",
  "futures",
  "process_control",
- "prost",
  "runner-common",
  "tokio",
- "tonic",
 ]
 
 [[package]]

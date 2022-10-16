@@ -1,6 +1,7 @@
 [package]
 name = "runner-common"
 version = "0.1.0"
+authors = ["Conner Bradley <bradley@advtech.ca>"]
 edition = "2021"
 
 [dependencies]

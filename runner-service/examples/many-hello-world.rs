@@ -2,6 +2,7 @@
 ///! Needs the runner service to be running
 ///! cargo run --example many-hello-world
 use futures::future::join_all;
+use runner_common::tonic;
 use runner_common::runner::{ExecuteRequest, Language};
 use runner_common::runner::runner_client::RunnerClient;
 

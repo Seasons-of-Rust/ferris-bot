@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use tonic::{Request, Response, Status};
+use runner_common::tonic::{async_trait, Request, Response, Status};
 use runner_common::runner::runner_server::{Runner};
 use runner_common::runner::{ExecuteRequest, ExecuteResponse, DescribeResponse, ExecuteStatus, Empty};
 
@@ -9,7 +9,7 @@ use crate::runner::runnable::*;
 #[derive(Debug, Default)]
 pub struct PodmanRunnerService {}
 
-#[tonic::async_trait]
+#[async_trait]
 impl Runner for PodmanRunnerService {
     async fn execute(
         &self,

@@ -2,7 +2,7 @@ use crate::Error;
 use runner_common::runner::{ExecuteRequest, Language};
 use serenity::prelude::Mentionable;
 
-use std::{io::ErrorKind, sync::Arc};
+
 
 /// Given some stdout or stderr data, format it so that it can be rendered by discord
 fn format_output(response: String, syntax_highlight: Option<&str>) -> String {
@@ -104,7 +104,7 @@ pub async fn run(
     // Grab the Client service from ctx and clone it 
     // Cloning the tonic client / channel is low cost, see
     // https://docs.rs/tonic/latest/tonic/transport/struct.Channel.html#multiplexing-requests
-    let mut run_client = ctx.data.shared_client.get();
+    let mut run_client = ctx.data.client_pool.read().unwrap().rr_next_client();
 
     let run_request = runner_common::tonic::Request::new(ExecuteRequest {
         language: Language::LangRust.into(),
